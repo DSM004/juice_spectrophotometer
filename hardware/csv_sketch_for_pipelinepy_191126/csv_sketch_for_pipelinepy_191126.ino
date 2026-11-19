@@ -25,16 +25,17 @@ const int  SETTLE_MS = 300;    // pause after switching the LED on
 
 // Gain and integration: keep these FIXED across a whole measurement series.
 // Full scale = (ATIME+1) * (ASTEP+1), here 30 * 600 = 18000 counts.
-const as7343_gain_t GAIN  = AS7343_GAIN_64X;
-const uint8_t       ATIME = 29;
+const as7343_gain_t GAIN  = AS7343_GAIN_256X;
+const uint8_t       ATIME = 99;
 const uint16_t      ASTEP = 599;
 
 void setup() {
-  Serial.begin(115200);
-  while (!Serial) delay(10);
-
   pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, LED_ON ? HIGH : LOW);
+  digitalWrite(LED_PIN, LED_ON ? HIGH : LOW);   // LED on regardless of USB
+
+  Serial.begin(115200);
+  unsigned long t0 = millis();
+  while (!Serial && millis() - t0 < 3000) delay(10);   // give up after 3 s
 
   if (!as7343.begin()) {
     Serial.println("AS7343 not found");
@@ -46,7 +47,6 @@ void setup() {
 
   delay(SETTLE_MS);
 
-  // Header: these names must match pipeline.py exactly
   Serial.println("F1,F2,FZ,F3,F4,F5,FY,FXL,F6,F7,F8,NIR,VIS,led,gain,atime,astep");
 }
 
@@ -80,7 +80,7 @@ void loop() {
     Serial.print(",");
   }
   Serial.print(LED_ON ? 1 : 0); Serial.print(",");
-  Serial.print(64);             Serial.print(",");   // gain, for the record
+  Serial.print(0.5 * (1 << GAIN), 1);  Serial.print(",");   // replaces Serial.print(16)
   Serial.print(ATIME);          Serial.print(",");
   Serial.println(ASTEP);
 
